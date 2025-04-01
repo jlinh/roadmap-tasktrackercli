@@ -14,20 +14,70 @@ def main():
         print("Error initializing task JSON file.")
         raise
     print(tasks)
+    args = parse_command()
+    print(args)
+
+
+def get_supported_commands():
+    return {
+        'add': {
+            'action': add_task,
+            'help': 'Add a new task',
+            'args': {
+                'description': {'type': str, 'required': True}
+            }
+        },
+        'update': {
+            'action': update_task,
+            'help': 'Update an existing task',
+            'args': {
+                'id': {'type': int, 'required': True},
+                'description': {'type': str, 'required': True},
+            }
+        },
+        'delete': {
+            'action': delete_task,
+            'help': 'Delete a task',
+            'args': {
+                'id': {'type': int, 'required': True}
+            }
+        },
+        'mark-in-progress': {
+            'action': mark_in_progress,
+            'help': 'Mark a task as in progress',
+            'args': {
+                'id': {'type': int, 'required': True}
+            }
+        },
+        'mark-done': {
+            'action': mark_done,
+            'help': 'Mark a task as done',
+            'args': {
+                'id': {'type': int, 'required': True}
+            }
+        },
+        'list': {
+            'action': list_tasks,
+            'description': 'List all tasks',
+            'args': {
+                'status': {'type': str, 'choices': ['all', 'in-progress', 'done', 'todo'], 'default': 'all'}
+            }
+        },
+    }
 
 
 def parse_command():
     parser = ArgumentParser(prog='taskctl', description='Task Tracker')
-    parser.add_argument('command', help='Command to execute')
-    parser.add_argument('task', help='Task to execute command on')
-    parser.add_argument('--start', help='Start time of task')
-    parser.add_argument('--end', help='End time of task')
-    parser.add_argument('--duration', help='Duration of task')
-    parser.add_argument('--status', help='Status of task')
-    parser.add_argument('--note', help='Note of task')
-    parser.add_argument('--list', help='List all tasks', action='store_true')
-    parser.add_argument('--delete', help='Delete task', action='store_true')
-    parser.add_argument('--clear', help='Clear all tasks', action='store_true')
+    # parser.add_argument('command', help='Command to execute')
+    # parser.add_argument('task', help='Task to execute command on')
+    # parser.add_argument('--start', help='Start time of task')
+    # parser.add_argument('--end', help='End time of task')
+    # parser.add_argument('--duration', help='Duration of task')
+    # parser.add_argument('--status', help='Status of task')
+    # parser.add_argument('--note', help='Note of task')
+    # parser.add_argument('--list', help='List all tasks', action='store_true')
+    # parser.add_argument('--delete', help='Delete task', action='store_true')
+    # parser.add_argument('--clear', help='Clear all tasks', action='store_true')
     args = parser.parse_args()
     return args
 
@@ -68,13 +118,6 @@ def is_valid_task(task):
         except:
             raise
         return True
-
-
-def parse_obj(taskDict):
-    if isinstance(taskDict, dict):
-        return {k: parse_obj(v) for k, v in taskDict.items()}
-    else:
-        raise ValueError("Invalid task data format")
 
 
 if __name__ == '__main__':
