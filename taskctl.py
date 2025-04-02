@@ -13,9 +13,12 @@ def main():
     except:
         print("Error initializing task JSON file.")
         raise
-    print(tasks)
-    args = parse_command()
-    print(args)
+    command, args = parse_command()
+    try:
+        command(tasks, **vars(args))
+    except:
+        print("Error executing command.")
+        raise
 
 
 def get_supported_commands():
@@ -23,63 +26,162 @@ def get_supported_commands():
         'add': {
             'action': add_task,
             'help': 'Add a new task',
-            'args': {
-                'description': {'type': str, 'required': True}
-            }
+            'args': [
+                {
+                    'name': 'description',
+                    'type': ascii,
+                    'help': 'Description of the new task'
+                }
+            ]
         },
         'update': {
             'action': update_task,
             'help': 'Update an existing task',
-            'args': {
-                'id': {'type': int, 'required': True},
-                'description': {'type': str, 'required': True},
-            }
+            'args': [
+                {
+                    'name': 'id',
+                    'type': int,
+                    'help': 'ID of the task to update'
+                },
+                {
+                    'name': 'description',
+                    'type': ascii,
+                    'help': 'New description of the task'
+                }
+            ]
         },
         'delete': {
             'action': delete_task,
             'help': 'Delete a task',
-            'args': {
-                'id': {'type': int, 'required': True}
-            }
+            'args': [
+                {
+                    'name': 'id',
+                    'type': int,
+                    'help': 'ID of the task to delete'
+                }
+            ]
         },
         'mark-in-progress': {
             'action': mark_in_progress,
             'help': 'Mark a task as in progress',
-            'args': {
-                'id': {'type': int, 'required': True}
-            }
+            'args': [
+                {
+                    'name': 'id',
+                    'type': int,
+                    'help': 'ID of the task to mark as in progress'
+                }
+            ]
         },
         'mark-done': {
             'action': mark_done,
             'help': 'Mark a task as done',
-            'args': {
-                'id': {'type': int, 'required': True}
-            }
+            'args': [
+                {
+                    'name': 'id',
+                    'type': int,
+                    'help': 'ID of the task to mark as done'
+                }
+            ]
         },
         'list': {
             'action': list_tasks,
-            'description': 'List all tasks',
-            'args': {
-                'status': {'type': str, 'choices': ['all', 'in-progress', 'done', 'todo'], 'default': 'all'}
-            }
-        },
+            'help': 'List all tasks or with a specific status',
+            'args': [
+                {
+                    'name': '--status',
+                    'type': str.lower,
+                    'required': False,
+                    'help': 'Filter tasks by status',
+                    'choices': [None, 'in-progress', 'done', 'todo'], 'default': None,
+                }
+            ]
+        }
     }
 
 
 def parse_command():
     parser = ArgumentParser(prog='taskctl', description='Task Tracker')
-    # parser.add_argument('command', help='Command to execute')
-    # parser.add_argument('task', help='Task to execute command on')
-    # parser.add_argument('--start', help='Start time of task')
-    # parser.add_argument('--end', help='End time of task')
-    # parser.add_argument('--duration', help='Duration of task')
-    # parser.add_argument('--status', help='Status of task')
-    # parser.add_argument('--note', help='Note of task')
-    # parser.add_argument('--list', help='List all tasks', action='store_true')
-    # parser.add_argument('--delete', help='Delete task', action='store_true')
-    # parser.add_argument('--clear', help='Clear all tasks', action='store_true')
+    subparser = parser.add_subparsers(dest='command')
+    commands = get_supported_commands()
+    for command, command_info in commands.items():
+        command_parser = subparser.add_parser(
+            command, help=command_info['help'])
+        for arg in command_info['args']:
+            if 'required' in arg and arg['required']:
+                print(arg)
+                command_parser.add_argument(
+                    arg['name'], default=arg['default'], type=arg['type'], choices=arg['choices'], required=arg['required'], help=arg['help'])
+            else:
+                command_parser.add_argument(
+                    arg['name'], type=arg['type'], help=arg['help'])
+
     args = parser.parse_args()
-    return args
+    if args.command is None:
+        parser.print_help()
+        sys.exit(1)
+
+    command = commands[vars(args).pop('command')]['action']
+    return command, args
+
+
+def add_task(tasks, description):
+    # Generate a new task ID
+    if len(tasks) == 0:
+        new_id = 1
+    else:
+        new_id = max(int(task['id']) for task in tasks) + 1
+    # Create a new task
+    new_task = {
+        "id": str(new_id),
+        "description": description,
+        "status": "Todo",
+        "createdAt": datetime.now().isoformat(),
+        "updatedAt": datetime.now().isoformat()
+    }
+    # Append the new task to the tasks list
+    tasks.append(new_task)
+    # Write the updated tasks list to the JSON file
+    with open('tasks.json', 'w') as f:
+        json.dump(tasks, f, indent=4)
+    # Print the new task
+    print("Task added successfully:")
+    # Print the new task in a table format
+    table = []
+    table.append([new_task['id'], new_task['description'],
+                  new_task['status'], new_task['createdAt'], new_task['updatedAt']])
+    # Print the new task in a table format
+    print(tabulate(table, headers=[
+          'ID', 'Description', 'Status', 'Created At', 'Updated At']))
+
+
+def update_task(args):
+    pass
+
+
+def delete_task(args):
+    pass
+
+
+def mark_in_progress(args):
+    pass
+
+
+def mark_done(args):
+    pass
+
+
+def list_tasks(args):
+    pass
+    # tasks = init_task_json()
+    # if args.status == 'all':
+    #     filtered_tasks = tasks
+    # else:
+    #     filtered_tasks = [task for task in tasks if task['status'] == args.status]
+    # table = []
+    # for task in filtered_tasks:
+    #     table.append([task['id'], task['description'],
+    #                   task['status'], task['createdAt'], task['updatedAt']])
+    # print(tabulate(table, headers=['ID', 'Description', 'Status', 'Created At', 'Updated At']))
 
 
 def init_task_json():
