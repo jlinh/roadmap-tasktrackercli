@@ -1,23 +1,30 @@
 [
-    {
-        "id": "1",
-        "description": "New task",
-        "status": "Todo",
-        "createdAt": "2024-08-19T17:12:24.510706",
-        "updatedAt": "2024-08-19T17:12:24.51076"
-    },
-    {
-        "id": "2",
-        "description": "New task",
-        "status": "Todo",
-        "createdAt": "2024-08-19T17:25:05.363261",
-        "updatedAt": "2024-08-19T17:25:05.363269"
-    },
-    {
-        "id": "3",
-        "description": "'Dummy Task'",
-        "status": "Todo",
-        "createdAt": "2025-04-02T14:52:14.174113",
-        "updatedAt": "2025-04-02T14:52:14.174121"
-    }
+  {
+    "id": "1",
+    "description": "Check",
+    "status": "in-progress",
+    "createdAt": "2024-08-19T17:12:24.510706",
+    "updatedAt": "2025-04-02T15:50:21.421147"
+  },
+  {
+    "id": "2",
+    "description": "New task",
+    "status": "todo",
+    "createdAt": "2024-08-19T17:25:05.363261",
+    "updatedAt": "2024-08-19T17:25:05.363269"
+  },
+  {
+    "id": "3",
+    "description": "Dummy Task",
+    "status": "done",
+    "createdAt": "2025-04-02T14:52:14.174113",
+    "updatedAt": "2025-04-02T15:50:05.246111"
+  },
+  {
+    "id": "5",
+    "description": "Test2",
+    "status": "todo",
+    "createdAt": "2025-04-02T15:08:44.840475",
+    "updatedAt": "2025-04-02T15:08:44.840487"
+  }
 ]

@@ -13,6 +13,7 @@ def main():
     except:
         print("Error initializing task JSON file.")
         raise
+
     command, args = parse_command()
     try:
         command(tasks, **vars(args))
@@ -29,7 +30,7 @@ def get_supported_commands():
             'args': [
                 {
                     'name': 'description',
-                    'type': ascii,
+                    'type': str,
                     'help': 'Description of the new task'
                 }
             ]
@@ -45,7 +46,7 @@ def get_supported_commands():
                 },
                 {
                     'name': 'description',
-                    'type': ascii,
+                    'type': str,
                     'help': 'New description of the task'
                 }
             ]
@@ -84,18 +85,47 @@ def get_supported_commands():
             ]
         },
         'list': {
+            'subcommands': {
+                'in-progress': {
+                    'action': list_tasks,
+                    'help': 'List all tasks in progress',
+                    'args': []
+                },
+                'done': {
+                    'action': list_tasks,
+                    'help': 'List all tasks done',
+                    'args': []
+                },
+                'todo': {
+                    'action': list_tasks,
+                    'help': 'List all tasks to do',
+                    'args': []
+                }
+            },
             'action': list_tasks,
             'help': 'List all tasks or with a specific status',
-            'args': [
-                {
-                    'name': '--status',
-                    'type': str.lower,
-                    'required': False,
-                    'help': 'Filter tasks by status',
-                    'choices': [None, 'in-progress', 'done', 'todo'], 'default': None,
-                }
-            ]
-        }
+            'args': []
+            # 'args': [
+            #     {
+            #         'name': 'status',
+            #         'type': str.lower,
+            #         'help': 'Filter tasks by status',
+            #         'choices': [None, 'in-progress', 'done', 'todo'], 'default': None,
+            #     }
+            # ]
+        },
+        # 'list': {
+        #     'action': list_tasks,
+        #     'help': 'List all tasks or with a specific status',
+        #     'args': [
+        #         {
+        #             'name': '--status',
+        #             'type': str.lower,
+        #             'help': 'Filter tasks by status',
+        #             'choices': [None, 'in-progress', 'done', 'todo'], 'default': None,
+        #         }
+        #     ]
+        # }
     }
 
 
@@ -106,12 +136,14 @@ def parse_command():
     for command, command_info in commands.items():
         command_parser = subparser.add_parser(
             command, help=command_info['help'])
-        for arg in command_info['args']:
-            if 'required' in arg and arg['required']:
-                print(arg)
-                command_parser.add_argument(
-                    arg['name'], default=arg['default'], type=arg['type'], choices=arg['choices'], required=arg['required'], help=arg['help'])
-            else:
+        if 'subcommands' in command_info:
+            subsubparser = command_parser.add_subparsers(dest='subcommand')
+            for subcommand, subcommand_info in command_info['subcommands'].items():
+                subcommand_parser = subsubparser.add_parser(
+                    subcommand, help=subcommand_info['help'])
+
+        else:
+            for arg in command_info['args']:
                 command_parser.add_argument(
                     arg['name'], type=arg['type'], help=arg['help'])
 
@@ -124,6 +156,23 @@ def parse_command():
     return command, args
 
 
+def display_tasks(tasks):
+    # Create a table to display the tasks
+    table = []
+    for task in tasks:
+        table.append([task['id'], task['description'],
+                      task['status'], task['createdAt'], task['updatedAt']])
+    # Print the table
+    print(tabulate(table, headers=[
+          'ID', 'Description', 'Status', 'Created At', 'Updated At']))
+
+
+def write_tasks_to_file(tasks):
+    # Write the updated tasks list to the JSON file
+    with open('tasks.json', 'w') as f:
+        json.dump(tasks, f, indent=2)
+
+
 def add_task(tasks, description):
     # Generate a new task ID
     if len(tasks) == 0:
@@ -134,54 +183,109 @@ def add_task(tasks, description):
     new_task = {
         "id": str(new_id),
         "description": description,
-        "status": "Todo",
+        "status": "todo",
         "createdAt": datetime.now().isoformat(),
         "updatedAt": datetime.now().isoformat()
     }
     # Append the new task to the tasks list
     tasks.append(new_task)
     # Write the updated tasks list to the JSON file
-    with open('tasks.json', 'w') as f:
-        json.dump(tasks, f, indent=4)
+    write_tasks_to_file(tasks)
     # Print the new task
-    print("Task added successfully:")
+    print("Task added successfully.")
     # Print the new task in a table format
-    table = []
-    table.append([new_task['id'], new_task['description'],
-                  new_task['status'], new_task['createdAt'], new_task['updatedAt']])
+    display_tasks(tasks)
+
+
+def update_task(tasks, id, description):
+    # Find the task with the given ID
+    selected_task = [task for task in tasks if task['id'] == str(id)][0]
+    if selected_task is None:
+        print(f"Task with ID {id} not found.")
+        return
+    # Update the task's description
+    selected_task['description'] = description
+    # Update the task's updatedAt timestamp
+    selected_task['updatedAt'] = datetime.now().isoformat()
+    # Write the updated tasks list to the JSON file
+    write_tasks_to_file(tasks)
+    # Print the updated task
+    print("Task updated successfully.")
     # Print the new task in a table format
-    print(tabulate(table, headers=[
-          'ID', 'Description', 'Status', 'Created At', 'Updated At']))
+    display_tasks(tasks)
 
 
-def update_task(args):
-    pass
+def delete_task(tasks, id):
+    # Find the task with the given ID
+    selected_task = [task for task in tasks if task['id'] == str(id)][0]
+    if selected_task is None:
+        print(f"Task with ID {id} not found.")
+        return
+    # Remove the task from the tasks list
+    tasks.remove(selected_task)
+    # Update the task's updatedAt timestamp
+    selected_task['updatedAt'] = datetime.now().isoformat()
+    # Write the updated tasks list to the JSON file
+    write_tasks_to_file(tasks)
+    # Print the deleted task
+    print("Task deleted successfully.")
+    # Print the new task in a table format
+    display_tasks(tasks)
 
 
-def delete_task(args):
-    pass
+def mark_status(tasks, id, status):
+    # Find the task with the given ID
+    selected_task = [task for task in tasks if task['id'] == str(id)][0]
+    if selected_task is None:
+        print(f"Task with ID {id} not found.")
+        return
+    # Update the task's status to "In Progress"
+    selected_task['status'] = status
+    # Update the task's updatedAt timestamp
+    selected_task['updatedAt'] = datetime.now().isoformat()
+    # Write the updated tasks list to the JSON file
+    write_tasks_to_file(tasks)
+    # Print the updated task
+    print(f"Task marked as {status} successfully.")
+    # Print the new task in a table format
+    display_tasks(tasks)
 
 
-def mark_in_progress(args):
-    pass
+def mark_in_progress(tasks, id):
+    mark_status(tasks, id, 'in-progress')
 
 
-def mark_done(args):
-    pass
+def mark_done(tasks, id):
+    mark_status(tasks, id, 'done')
 
 
-def list_tasks(args):
-    pass
-    # tasks = init_task_json()
-    # if args.status == 'all':
-    #     filtered_tasks = tasks
-    # else:
-    #     filtered_tasks = [task for task in tasks if task['status'] == args.status]
-    # table = []
-    # for task in filtered_tasks:
-    #     table.append([task['id'], task['description'],
-    #                   task['status'], task['createdAt'], task['updatedAt']])
-    # print(tabulate(table, headers=['ID', 'Description', 'Status', 'Created At', 'Updated At']))
+def list_tasks(tasks, subcommand=None):
+    # Check if a subcommand is provided
+    if subcommand is not None:
+        status = subcommand
+    else:
+        status = None
+    # Check if the tasks list is empty
+    if len(tasks) == 0:
+        print("No tasks found.")
+        return
+    # If a subcommand is provided, filter tasks by status
+    # Check if the status is valid
+    if status not in [None, 'in-progress', 'done', 'todo']:
+        print(f"Invalid status: {status}")
+        return
+    # Filter tasks based on the status
+    if status is None:
+        filtered_tasks = tasks
+    else:
+        # Filtering tasks by status:
+        filtered_tasks = [task for task in tasks if task['status'] == status]
+    # Display the filtered tasks
+    if len(filtered_tasks) == 0:
+        print(f"No tasks found with status: {status}")
+        return
+    # Print the filtered tasks in a table format
+    display_tasks(filtered_tasks)
 
 
 def init_task_json():
